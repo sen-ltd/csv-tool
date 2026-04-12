@@ -1,0 +1,12 @@
+{
+  "name": "csv-tool",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CSV editor with Markdown/JSON/HTML table export.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python3 -m http.server 8080"
+  },
+  "license": "MIT"
+}

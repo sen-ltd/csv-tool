@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSV ツール — 読み込み・編集・変換</title>
+  <meta name="description" content="CSV の読み込み・編集・変換ツール。RFC 4180 パーサ、自動区切り検出、Markdown / JSON / HTML エクスポート。" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<header class="app-header">
+  <div class="header-left">
+    <h1 class="app-title" data-i18n="title"></h1>
+    <span class="app-subtitle" data-i18n="subtitle"></span>
+  </div>
+  <div class="header-right">
+    <button id="btn-lang" class="btn btn-ghost"></button>
+    <button id="btn-theme" class="btn btn-ghost" title="Toggle theme">🌙</button>
+  </div>
+</header>
+
+<!-- ── Main ────────────────────────────────────────────────────────────── -->
+<main class="app-main">
+
+  <!-- Input panel -->
+  <section class="panel input-panel">
+
+    <!-- Drop zone -->
+    <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop CSV file">
+      <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+        <polyline points="8 12 12 8 16 12"/>
+        <line x1="12" y1="8" x2="12" y2="20"/>
+      </svg>
+      <span class="drop-label" data-i18n="dropZone"></span>
+      <input id="file-input" type="file" accept=".csv,.tsv,.txt" class="visually-hidden" />
+    </div>
+
+    <!-- Paste area -->
+    <div class="paste-row">
+      <label class="label" for="csv-input" data-i18n="pasteLabel"></label>
+    </div>
+    <textarea
+      id="csv-input"
+      class="csv-textarea"
+      data-i18n-placeholder="pastePlaceholder"
+      rows="6"
+      spellcheck="false"
+    ></textarea>
+
+    <!-- Controls row -->
+    <div class="controls-row">
+      <div class="controls-left">
+        <!-- Delimiter -->
+        <label class="label" for="sel-delimiter" data-i18n="delimiterLabel"></label>
+        <select id="sel-delimiter" class="select">
+          <option value="auto" data-i18n="delimAuto">Auto detect</option>
+          <option value="," data-i18n="delimComma">Comma (,)</option>
+          <option value="tab" data-i18n="delimTab">Tab</option>
+          <option value=";" data-i18n="delimSemicolon">Semicolon (;)</option>
+          <option value="|" data-i18n="delimPipe">Pipe (|)</option>
+        </select>
+
+        <!-- Header checkbox -->
+        <label class="checkbox-label">
+          <input id="chk-header" type="checkbox" checked />
+          <span data-i18n="headerRow"></span>
+        </label>
+      </div>
+
+      <div class="controls-right">
+        <button id="btn-sample" class="btn btn-ghost" data-i18n="sampleBtn"></button>
+        <button id="btn-clear" class="btn btn-ghost" data-i18n="clearBtn"></button>
+        <button id="btn-parse" class="btn btn-primary" data-i18n="parseBtn"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Error / copy toast -->
+  <div id="error-msg" class="toast toast-error"></div>
+  <div id="copied-msg" class="toast toast-success"></div>
+
+  <!-- Empty state -->
+  <div id="empty-state" class="empty-state">
+    <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+      <rect x="8" y="12" width="48" height="40" rx="4"/>
+      <line x1="16" y1="22" x2="48" y2="22"/>
+      <line x1="16" y1="30" x2="48" y2="30"/>
+      <line x1="16" y1="38" x2="36" y2="38"/>
+      <line x1="28" y1="12" x2="28" y2="52"/>
+    </svg>
+    <p data-i18n="emptyState"></p>
+  </div>
+
+  <!-- Table section -->
+  <section id="section-table" class="panel table-panel hidden">
+
+    <!-- Toolbar -->
+    <div class="table-toolbar">
+      <div class="toolbar-left">
+        <!-- Stats -->
+        <div id="stats-bar" class="stats-bar"></div>
+      </div>
+      <div class="toolbar-right">
+        <!-- Search -->
+        <input
+          id="input-search"
+          type="search"
+          class="search-input"
+          data-i18n-placeholder="searchPlaceholder"
+        />
+
+        <!-- Row/Col add -->
+        <button id="btn-add-row" class="btn btn-ghost btn-sm" data-i18n="addRow"></button>
+        <button id="btn-add-col" class="btn btn-ghost btn-sm" data-i18n="addCol"></button>
+
+        <!-- Export dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-primary btn-sm dropdown-toggle" id="export-toggle" aria-haspopup="true" aria-expanded="false" data-i18n="exportBtn"></button>
+          <ul class="dropdown-menu" id="export-menu" role="menu">
+            <li><button id="btn-export-csv" class="dropdown-item" role="menuitem" data-i18n="exportCSV"></button></li>
+            <li><button id="btn-export-tsv" class="dropdown-item" role="menuitem" data-i18n="exportTSV"></button></li>
+            <li><button id="btn-export-json" class="dropdown-item" role="menuitem" data-i18n="exportJSON"></button></li>
+            <li class="dropdown-divider"></li>
+            <li><button id="btn-export-md" class="dropdown-item" role="menuitem" data-i18n="exportMarkdown"></button></li>
+            <li><button id="btn-export-html" class="dropdown-item" role="menuitem" data-i18n="exportHTML"></button></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table wrapper -->
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead id="tbl-head"></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div id="section-pagination" class="pagination hidden">
+      <button id="btn-prev" class="btn btn-ghost btn-sm" data-i18n="prevPage" disabled></button>
+      <span id="page-info" class="page-info"></span>
+      <button id="btn-next" class="btn btn-ghost btn-sm" data-i18n="nextPage"></button>
+      <label class="label pagination-size">
+        <span data-i18n="pageSizeLabel"></span>
+        <select id="sel-page-size" class="select select-sm">
+          <option value="25">25</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="500">500</option>
+        </select>
+      </label>
+    </div>
+
+  </section>
+</main>
+
+<!-- ── Footer ──────────────────────────────────────────────────────────── -->
+<footer class="app-footer">
+  <span>CSV Tool — <a href="https://sen.ltd" target="_blank" rel="noopener">SEN LLC</a></span>
+</footer>
+
+<script type="module" src="src/main.js"></script>
+<script>
+  // Export dropdown toggle (no module dependency needed)
+  document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('export-toggle');
+    const menu = document.getElementById('export-menu');
+    if (toggle && menu) {
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = menu.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', open);
+      });
+      document.addEventListener('click', () => {
+        menu.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    }
+  });
+</script>
+
+</body>
+</html>
