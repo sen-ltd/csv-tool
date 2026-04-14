@@ -56,3 +56,10 @@ csv-tool/
 ## License
 
 MIT — Copyright (c) 2026 SEN LLC (SEN 合同会社)
+
+<!-- sen-publish:links -->
+## Links
+
+- 🌐 Demo: https://sen.ltd/portfolio/csv-tool/
+- 📝 dev.to: https://dev.to/sendotltd/a-csv-editor-with-rfc-4180-parsing-auto-delimiter-detection-and-markdown-export-2fcg
+<!-- /sen-publish:links -->
